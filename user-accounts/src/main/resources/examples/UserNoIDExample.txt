@@ -1,0 +1,7 @@
+{
+    "username": "asdf",
+    "fullname": "Josefa Llanes Escoda",
+    "birthday": "01-01-1994",
+    "gender": "male",
+    "dateRegistered": "10-08-2015"
+}

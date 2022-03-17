@@ -1,0 +1,12 @@
+http:
+  port: "8082"
+  
+db:
+  host: "127.0.0.1"
+  port: "13306"
+  user: "userr"
+  pass: "passwd"
+  name: "user_accounts_db"
+  
+validation:
+  header: "j32io33ise4k2qq1"

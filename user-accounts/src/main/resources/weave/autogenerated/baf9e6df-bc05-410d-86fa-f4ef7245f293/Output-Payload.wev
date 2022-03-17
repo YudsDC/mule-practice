@@ -1,0 +1,12 @@
+%dw 2.0
+
+type auto_baf9e6df_bc05_410d_86fa_f4ef7245f293_Output_Payload = {
+  birthday: String, 
+  gender: String, 
+  ID?: Number, 
+  fullname: String, 
+  dateRegistered: String, 
+  username: String, 
+  _?: Any
+}
+

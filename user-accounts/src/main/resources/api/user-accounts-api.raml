@@ -1,0 +1,43 @@
+#%RAML 1.0
+title: User Accounts API
+
+types:
+  User: !include datatypes/User.raml
+  Users: !include datatypes/Users.raml
+
+/users:
+  get:
+    displayName: Get Active Users
+    responses:
+      200:
+        body:
+          application/json:
+            type: User[]
+            examples:
+              output: !include examples/UsersExample.raml
+  
+  /{username}:
+    get:
+      displayName: Get User by Username
+      responses:
+        200:
+          body:
+            application/json:
+              type: User
+              examples:
+                output: !include examples/UserExample.raml
+
+  post:
+    body:
+      application/json:
+        type: User
+        examples:
+          input: !include examples/UserNoIDExample.raml
+
+/createUsers:
+  post:
+    body:
+      application/json:
+        type: Users
+        examples:
+          input: !include examples/PostMultipleUsersExample.raml

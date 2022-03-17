@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<sub-flow name="validate-header" doc:id="319d0092-6154-4d2b-86ad-e7c5f73c0361" >
+		<validation:is-true doc:name="Validate header" doc:id="91a6179e-fef5-4bc0-8544-9f73309bfa2e" expression="#[attributes.headers.header == p('validation.header')]">
+			<error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="APP:UNAUTHORIZED" />
+		</validation:is-true>
+	</sub-flow>
+	<flow name="get-all-accounts" doc:id="7f7463b2-9b7e-4ad6-9b59-02173b4a1865" >
+		<flow-ref doc:name="Validate header" doc:id="1de51054-6fb3-4976-87d8-77837a0b6134" name="validate-header"/>
+		<db:select doc:name="Select All Accounts" doc:id="b8b6b281-28c0-4f6c-8803-d1ddae1abc05" config-ref="Database_Config">
+			<db:sql ><![CDATA[select a.username, ad.full_name, ad.birthday, ad.gender, a.date_registered
+from accounts a
+join account_details ad on ad.account_id = a.id
+where a.active = 1]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="3011614b-0c24-4e5c-8d94-413fd877297e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+import dw::core::Periods
+
+fun getAge(birthday) = Periods::between(now(), birthday)
+
+---
+{
+	Users: payload map {
+		username: $.username,
+		fullname: $.full_name,
+		birthday: $.birthday as String {format: "dd-MM-yyyy"},
+		age: getAge($.birthday).years,
+		gender: (if ($.gender == "M") "Male" else if ($.gender == "F") "Female" else "Rather not say"),
+		dateRegistered: $.date_registered as String {format: "dd-MM-yyyy"}
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="post-account" doc:id="67a72532-1e4f-4b7f-a610-8cda281ede4c" >
+		<flow-ref doc:name="Validate header" doc:id="5c8d3bb3-5aa2-4c76-a87b-a3419feffa45" name="validate-header"/>
+		<ee:transform doc:name="Transform Message" doc:id="6a4717bc-b69f-4136-862a-eb271d62d31d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	username: payload.username,
+	fullname: payload.fullname,
+	birthday: payload.birthday as Date {format: "dd-MM-yyyy"} as String {format: "yyyy-MM-dd"},
+	dateRegistered: payload.dateRegistered as Date {format: "dd-MM-yyyy"}  as String {format: "yyyy-MM-dd"},
+	gender: if (payload.gender == "male") "M" else if (payload.gender == "female") "F" else null
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="Save Account" doc:id="0b74462b-379d-4ec5-b120-7028808a5679" name="insert-account"/>
+		<set-variable value="201" doc:name="Set Variable" doc:id="4b30fa9a-2cc9-45ab-ae52-c6ba6753df72" variableName="httpStatus"/>
+		<ee:transform doc:name="Transform Message" doc:id="43c83ff9-6616-4dd3-96c9-1bda994af996" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "success",
+	"responseCode": vars.httpStatus
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="post-multiple-accounts" doc:id="4a18e958-c3e9-4b8b-bfe7-378b13815f65" >
+		<flow-ref doc:name="Validate header" doc:id="b6d875da-fb7d-475c-b7be-7b31e0c1cee3" name="validate-header"/>
+		<ee:transform doc:name="Transform Message" doc:id="f69e873a-6a0a-4291-9af3-1b3c3bfb9032" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload.Users map {
+	username: $.username,
+	fullname: $.fullname,
+	birthday: $.birthday as Date {format: "dd-MM-yyyy"} as String {format: "yyyy-MM-dd"},
+	dateRegistered: $.dateRegistered as Date {format: "dd-MM-yyyy"}  as String {format: "yyyy-MM-dd"},
+	gender: if ($.gender == "male") "M" else if ($.gender == "female") "F" else null
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<parallel-foreach doc:name="Parallel For Each" doc:id="d2de53eb-71e2-4831-b77c-ac289451e928" collection="#[payload]">
+			<flow-ref doc:name="Save Account" doc:id="f0fba2ce-4335-44a8-be45-962d33fa5fbc" name="insert-account"/>
+		</parallel-foreach>
+		<set-variable value="202" doc:name="Set Variable" doc:id="8a920951-fe7c-4487-af80-729bf7eac85a" variableName="httpStatus"/>
+		<ee:transform doc:name="Transform Message" doc:id="01a7d9ee-9d3f-4799-9b23-dc4a3f7af7ef" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "success",
+	"responseCode": vars.httpStatus
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<sub-flow name="insert-account" doc:id="2a5d5159-e283-4471-ac07-e4d58559abda" >
+		<try doc:name="Try" doc:id="292d9cfe-89a3-4e53-8fc9-c60d0574740e" transactionalAction="ALWAYS_BEGIN">
+			<db:insert doc:name="Insert to accounts" doc:id="48190d90-dd91-445b-8620-aefeb14dcbb0" config-ref="Database_Config" autoGenerateKeys="true" target="insertAccountResult">
+			<db:sql><![CDATA[insert into accounts (username, date_registered, active) values (:username, :dateRegistered,  1)]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	username: payload.username,
+	dateRegistered: payload.dateRegistered
+}]]]></db:input-parameters>
+		</db:insert>
+			<db:select doc:name="Get ID from Accounts using username" doc:id="47939a8c-6eef-489e-afbc-4814cae7316b" config-ref="Database_Config" target="accountID" targetValue="#[payload[0].id]">
+						<db:sql><![CDATA[select id from accounts where username = :username]]></db:sql>
+						<db:input-parameters><![CDATA[#[{
+	username: payload.username
+}]]]></db:input-parameters>
+					</db:select>
+			<db:insert doc:name="Insert to account_details" doc:id="76da2c86-853c-4ec5-801a-c167d63c2dcc" config-ref="Database_Config">
+			<db:sql><![CDATA[insert into account_details (account_id, full_name, birthday, gender)
+values (:accountID, :fullName, :birthday, :gender)]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	accountID: vars.accountID,
+	fullName: payload.fullname,
+	birthday: payload.birthday,
+	gender: payload.gender
+}]]]></db:input-parameters>
+		</db:insert>
+		</try>
+	</sub-flow>
+	<flow name="get-account-by-username" doc:id="baf9e6df-bc05-410d-86fa-f4ef7245f293" >
+		<flow-ref doc:name="Validate header" doc:id="49e9afcc-9d26-45cc-b4ba-2f2d9abac022" name="validate-header"/>
+		<db:select doc:name="Select Account by Username" doc:id="46045ebe-1fb4-48b7-84a1-660fe582424b" config-ref="Database_Config">
+			<db:sql ><![CDATA[select a.username, ad.full_name, ad.birthday, ad.gender, a.date_registered
+from accounts a
+join account_details ad on ad.account_id = a.id
+where a.username = :username]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	username: attributes.uriParams.username
+}]]]></db:input-parameters>
+		</db:select>
+		<validation:is-not-empty-collection doc:name="Validate Account Exists" doc:id="36ae5021-fb14-484f-92f2-2975e043bf47" >
+			<error-mapping sourceType="VALIDATION:EMPTY_COLLECTION" targetType="APP:USER_NOT_FOUND" />
+		</validation:is-not-empty-collection>
+		<ee:transform doc:name="Transform Message" doc:id="150f1c27-b739-4e20-8ea6-962cf6b3913b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+import dw::core::Periods
+
+fun getAge(birthday) = Periods::between(now(), birthday)
+
+fun parseGender(gender) =
+(if (gender == "M") "Male" else if (gender == "F") "Female" else "Rather not say")
+
+---
+if (payload[0] == null) {}
+else
+{
+	username: payload[0].username,
+	fullname: payload[0].full_name,
+	birthday: payload[0].birthday as String {format: "dd-MM-yyyy"},
+	age: getAge(payload[0].birthday).years,
+	gender: parseGender(payload[0].gender),
+	dateRegistered: payload[0].date_registered as String {format: "dd-MM-yyyy"}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

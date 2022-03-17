@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<error-handler name="errorsError_Handler" doc:id="5d8d6c17-57f1-486f-8b8c-0507a3915bf0" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="f1cbd560-1379-405c-882b-95b092bcd7c8" type="APP:UNAUTHORIZED">
+			<set-variable value="401" doc:name="Set Variable" doc:id="2e7eb34c-2973-4f38-bdbc-ac68bd78c803" variableName="httpStatus"/>
+			<ee:transform doc:name="Transform Message" doc:id="4025bf2f-e52a-45f8-a119-c2ff0a5ea783" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Unauthorized",
+	"responseCode": vars.httpStatus
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="09944e8a-625a-4465-bd19-5045deb49c5e" type="APP:USER_NOT_FOUND">
+			<set-variable value="404" doc:name="Set Variable" doc:id="2a0e6726-237e-4b6b-9ae8-9e3130c4a34b" variableName="httpStatus"/>
+			<ee:transform doc:name="Transform Message" doc:id="4283a39f-a923-47b6-a436-ef85e6716460" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "user not found",
+	"responseCode": vars.httpStatus
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="a3cd0603-bb51-4126-9a78-f82cba30b487" type="ANY">
+			<set-variable value="500" doc:name="Set Variable" doc:id="c6a9fff6-4036-467e-babd-ab5610d6adf7" variableName="httpStatus" />
+			<ee:transform doc:name="Transform Message" doc:id="4e2af5d4-f91d-408a-9bc6-18430d704b14">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "system error",
+	"responseCode": vars.httpStatus
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+            
+    </error-handler>
+</mule>

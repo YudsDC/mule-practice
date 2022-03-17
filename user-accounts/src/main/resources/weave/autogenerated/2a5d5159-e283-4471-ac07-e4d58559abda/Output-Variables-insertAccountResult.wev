@@ -1,0 +1,8 @@
+%dw 2.0
+
+type auto_2a5d5159_e283_4471_ac07_e4d58559abda_Output_Variables_insertAccountResult = {|
+  affectedRows?: Number, 
+  generatedKeys?: { _?: Number }
+|} {"typeAlias": "StatementResult",
+"typeId": "org.mule.extension.db.api.StatementResult"}
+

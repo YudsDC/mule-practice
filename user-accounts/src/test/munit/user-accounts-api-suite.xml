@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="user-accounts-api-suite.xml" />
+	<munit:test name="user-accounts-api-main-test" doc:id="20f97a34-9c5b-4301-8058-27b78ab33f2c" >
+		<munit:behavior >
+			<munit:set-event doc:name="Set Event" doc:id="a7d36372-72ab-4b1b-9d65-f74e88deed73" >
+				<munit:attributes value='#[{"headers": {"header": "j32io33ise4k2qq1"}}]' />
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to user-accounts-api-main" doc:id="980cafd6-ccdc-4a54-a28b-e56aa41d0467" name="user-accounts-api-main"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert doc:name="Assert payload" doc:id="1a45f922-9edf-4945-94e1-7e003b8e862e" message="The payload does not match">
+				<munit-tools:that ><![CDATA[#[%dw 2.0
+import useraccountsapimaintest::assert_expression_payload
+---
+assert_expression_payload::main({payload: payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+		</munit:validation>
+	</munit:test>
+
+</mule>

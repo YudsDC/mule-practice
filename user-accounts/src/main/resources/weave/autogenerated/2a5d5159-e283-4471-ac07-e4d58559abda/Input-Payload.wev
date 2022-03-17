@@ -1,0 +1,10 @@
+%dw 2.0
+
+type auto_2a5d5159_e283_4471_ac07_e4d58559abda_Input_Payload = {|
+  username: String, 
+  fullname: String, 
+  birthday: String, 
+  dateRegistered: String, 
+  gender: String | Null
+|}
+

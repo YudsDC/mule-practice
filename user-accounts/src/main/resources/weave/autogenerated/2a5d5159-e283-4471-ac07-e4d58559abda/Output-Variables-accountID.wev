@@ -1,0 +1,9 @@
+%dw 2.0
+
+type auto_2a5d5159_e283_4471_ac07_e4d58559abda_Output_Variables_accountID = java_lang_Object | Null
+type java_lang_Object = {|  |} {"typeAlias": "Object",
+"class": "java.lang.Object",
+"typeId": "java.lang.Object"}
+
+
+
